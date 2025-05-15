@@ -172,3 +172,22 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+*~
+*.iml
+.idea
+.project
+.target
+.DS_Store
+.Python
+*.log
+*.pyc
+build/
+bin/
+cache/
+db/
+.tox/
+include/
+lib/
+pip-selfcheck.json
+__pycache__/
