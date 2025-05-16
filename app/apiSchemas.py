@@ -1,6 +1,11 @@
-from pydantic import BaseModel
+from uuid import UUID
+
+from pydantic import BaseModel, EmailStr
 from typing import Optional
 
+
+# <--------------------------------------------------------->
+# API schemas for Ticket Request and Response
 
 class TicketCreate(BaseModel):
     title: str
@@ -16,5 +21,14 @@ class TicketUpdate(BaseModel):
 
 
 class TicketResponse(TicketCreate):
-    id: str
+    id: UUID
     status: str
+
+
+# <--------------------------------------------------------->
+# API schemas for User Request and Response
+
+class UserCreate(BaseModel):
+    name: str
+    email: EmailStr
+    password: str

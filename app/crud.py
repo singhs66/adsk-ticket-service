@@ -1,33 +1,35 @@
 from uuid import uuid4
-from app.TicketSO import TicketSO
-from app.database import tickets_db
+from app.daoLayer.serviceObjects.TicketSO import TicketSO
+from app.daoLayer.database import create_ticket_dao, list_ticket_dao, get_ticket_dao, \
+    delete_ticket_dao, update_ticket_dao
 
 
 def create_ticket(data):
     ticket_id = str(uuid4())
-    ticket = TicketSO(id=ticket_id, **data.dict())
+    ticket = TicketSO(**data.model_dump())
+    ticket.id = ticket_id
 
-    database = tickets_db()
-    database[ticket_id] = ticket
+    print("ticket details -----", ticket)
+
+    create_ticket_dao(ticket)
     return ticket
 
 
 def get_all_tickets():
-    return list(tickets_db().values())
+    return list_ticket_dao()
 
 
 def get_ticket(ticket_id):
-    return tickets_db().get(ticket_id)
+    return get_ticket_dao(ticket_id)
 
 
 def update_ticket(ticket_id, data):
-    ticket = tickets_db.get(ticket_id)
-    if not ticket:
-        return None
-    updated = ticket.copy(update=data.dict(exclude_unset=True))
-    tickets_db[ticket_id] = updated
-    return updated
+    # getTicketSO = get_ticket_dao(ticket_id)
+    # if not getTicketSO:
+    #     return None
+    # updatedTicketSO = getTicketSO.copy(update=data.dict(exclude_unset=True))
+    return update_ticket_dao(ticket_id,data)
 
 
 def delete_ticket(ticket_id):
-    return tickets_db.pop(ticket_id, None)
+    return delete_ticket_dao(ticket_id)

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app import crud
-from app.TicketSO import TicketSO
+from app.daoLayer.serviceObjects.TicketSO import TicketSO
 from app.apiSchemas import TicketCreate, TicketUpdate, TicketResponse
 from typing import List
 from typing import Dict
