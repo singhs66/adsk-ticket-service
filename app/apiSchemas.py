@@ -10,14 +10,14 @@ from typing import Optional
 class TicketCreate(BaseModel):
     title: str
     description: str
-    priority: Optional[str] = "medium"
+    severity: Optional[str] = "medium"
 
 
 class TicketUpdate(BaseModel):
     title: Optional[str]
     description: Optional[str]
     status: Optional[str]
-    priority: Optional[str]
+    severity: Optional[str]
 
 
 class TicketResponse(TicketCreate):

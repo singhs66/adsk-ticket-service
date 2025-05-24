@@ -9,4 +9,4 @@ class TicketSO(BaseModel):
     title: str
     description: str
     status: Optional[str] = "open"
-    priority: Optional[str] = "medium"
+    severity: Optional[str] = "medium"
