@@ -16,7 +16,7 @@ def buildLocalDB():
     localTicket.status = "progress"
     localTicket.title = "some"
     localTicket.description = "description"
-    localTicket.priority = "high"
+    localTicket.severity = "high"
 
     return {localTicket.id: localTicket}
 
@@ -88,6 +88,7 @@ def get_ticket_dao(ticket_id: str):
 def update_ticket_dao(ticket_id: str, updatedTicket: TicketUpdate):
     db = SessionLocal()
     try:
+        print(updatedTicket , "updating value")
         db_ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
         if not db_ticket:
             raise HTTPException(status_code=404, detail="Ticket not found")
@@ -104,10 +105,14 @@ def update_ticket_dao(ticket_id: str, updatedTicket: TicketUpdate):
 def delete_ticket_dao(ticket_id: str):
     db = SessionLocal()
     try:
-        db.query(Ticket).filter(Ticket.id == ticket_id).delete(synchronize_session="auto")
-        db.commit()
-        print("Deleted the ticket ->", ticket_id)
 
-    finally:
-        # Close the session
-        db.close()
+        deleted = db.query(Ticket).filter(Ticket.id == ticket_id).delete(synchronize_session="fetch")
+        db.commit()
+        if deleted == 0:
+            raise HTTPException(status_code=404, detail=f"Ticket {ticket_id} not found")
+        print("Deleted the ticket successfully ->", ticket_id)
+        return True
+    except Exception as e:
+        db.rollback()
+        print("Error deleting ticket:", e)
+        raise HTTPException(status_code=500, detail="Failed to delete ticket")
