@@ -8,7 +8,8 @@ from app.daoLayer.dataModel.ticketDO import Ticket
 from app.daoLayer.database_base import Base
 from app.daoLayer.mapper.ticketMapper import ticketMapper
 from app.daoLayer.serviceObjects import TicketSO
-
+from sqlalchemy import text
+from app.integrations.slackbot.slackbot import send_slack_notification_create
 
 def buildLocalDB():
     localTicket = apiSchemas.TicketResponse
@@ -29,6 +30,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def init_db():
     Base.metadata.create_all(bind=engine, checkfirst=True)
+    create_indexes()
 
 
 # Dependency to get DB session
@@ -51,6 +53,13 @@ def create_ticket_dao(ticketSO: TicketSO):
         db.add(db_ticket)
         db.commit()
         db.refresh(db_ticket)
+
+        # Add new ticket to cache
+        # set_to_cache(ticketSO.id, ticketSO)
+
+        # Add Slack notification when ticket is created
+        send_slack_notification_create(ticketSO, action="Created")
+
         return db_ticket
     except Exception as e:
         db.rollback()
@@ -59,13 +68,25 @@ def create_ticket_dao(ticketSO: TicketSO):
         db.close()
 
 
-def list_ticket_dao():
+def list_ticket_dao(status: str ,
+                    sort_by: str,
+                    assignee: str):
     db = SessionLocal()
     try:
+        query = db.query(Ticket)
+        # Index on `status`
+        print(status,"status value")
+        if status:
+            query = query.filter(Ticket.status == status)
+
+        print(assignee, "assignee value")
+        if assignee:
+            query = query.filter(Ticket.assignee == assignee)
+
         # Query all records from the tickets table
-        listTickets = db.query(Ticket).all()
-        list_tickets = [ticket for ticket in listTickets]
-        return list_tickets
+        listTicketSO = query.all()
+        finalListTicketSO = [ticket for ticket in listTicketSO]
+        return finalListTicketSO
 
     finally:
         # Close the session
@@ -74,10 +95,16 @@ def list_ticket_dao():
 
 def get_ticket_dao(ticket_id: str):
     db = SessionLocal()
+    # Check this in cache
+    # cached = get_from_cache(ticket_id)
+    # if cached:
+    #     return cached
     try:
         # Query ticket_id record from the tickets table
         getTicketSO = db.query(Ticket).get(ticket_id)
 
+        # Add this to cache
+        # set_to_cache(ticket_id, getTicketSO)
         return getTicketSO
 
     finally:
@@ -92,15 +119,24 @@ def update_ticket_dao(ticket_id: str, updatedTicket: TicketUpdate):
         db_ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
         if not db_ticket:
             raise HTTPException(status_code=404, detail="Ticket not found")
-        print("Updated --> ", updatedTicket)
-        for key, value in updatedTicket.dict().items():
-            setattr(db_ticket, key, value)
+        if updatedTicket.status:
+            db_ticket.status = updatedTicket.status
+        if updatedTicket.description:
+            db_ticket.description = updatedTicket.description
+        print("Successfully Updated --> ", db_ticket)
         db.commit()
         db.refresh(db_ticket)
-    finally:
-        # Close the session
-        db.close()
 
+        send_slack_notification_create(db_ticket, action="Updated")
+
+        # Invalidate your existing cache record and update
+        # with the latest ticket details
+        # invalidate_cache(ticket_id)
+        # set_to_cache(ticket_id, db_ticket)
+
+        return db_ticket
+    finally:
+        db.close()
 
 def delete_ticket_dao(ticket_id: str):
     db = SessionLocal()
@@ -116,3 +152,24 @@ def delete_ticket_dao(ticket_id: str):
         db.rollback()
         print("Error deleting ticket:", e)
         raise HTTPException(status_code=500, detail="Failed to delete ticket")
+
+# Creating indexes using status and reporter
+def create_indexes():
+    sql_statements = [
+        'CREATE INDEX IF NOT EXISTS idx_tickets_status ON tickets(status);',
+        'CREATE INDEX IF NOT EXISTS idx_tickets_created_at ON tickets(created_at DESC);',
+        'CREATE INDEX IF NOT EXISTS idx_tickets_reporter ON tickets(id);'
+        'CREATE INDEX IF NOT EXISTS idx_tickets_assignee ON tickets(assignee);'
+    ]
+
+    db = SessionLocal()
+    try:
+        for stmt in sql_statements:
+            db.execute(text(stmt))
+        db.commit()
+        print("Indexes created successfully")
+    except Exception as e:
+        db.rollback()
+        print("Error creating indexes:", e)
+    finally:
+        db.close()

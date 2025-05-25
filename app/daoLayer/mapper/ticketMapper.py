@@ -8,5 +8,7 @@ def ticketMapper(ticketSO: TicketSO) -> Ticket:
         title=ticketSO.title,
         description=ticketSO.description,
         status=ticketSO.status,
-        severity=ticketSO.severity)
+        severity=ticketSO.severity,
+        assignee= ticketSO.assignee,
+        category=ticketSO.category)
     return db_ticket

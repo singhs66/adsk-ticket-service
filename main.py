@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from app.auth.routes import router as auth_router
 from app.daoLayer.database import engine, init_db
 from app.v1.routers import tickets
@@ -17,6 +17,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 app.include_router(auth_router)
 app.include_router(tickets.router, prefix="/tickets", tags=["Tickets"])
 
@@ -24,5 +25,7 @@ app.include_router(tickets.router, prefix="/tickets", tags=["Tickets"])
 @app.on_event("startup")
 def on_startup():
     init_db()
-    
-# add comments
+
+@app.get("/health", status_code=status.HTTP_200_OK)
+def health():
+    return {"status": "ok"}
