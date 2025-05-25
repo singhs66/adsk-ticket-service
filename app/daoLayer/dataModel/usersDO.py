@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Text, DateTime, func, INT, Boolean, Integer
+from sqlalchemy import Column, String, Text, DateTime, func, Boolean, Integer
 from app.daoLayer.database_base import Base
 
 
