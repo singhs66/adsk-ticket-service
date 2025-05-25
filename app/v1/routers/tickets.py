@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from app import crud
-from app.TicketSO import TicketSO
+from app.daoLayer.serviceObjects.TicketSO import TicketSO
 from app.apiSchemas import TicketCreate, TicketUpdate, TicketResponse
 from typing import List
 from typing import Dict
@@ -18,9 +18,11 @@ def create(data: TicketCreate):
 
 
 @router.get("/", response_model=List[TicketResponse])
-def list_tickets():
+def list_tickets(status: str = Query(default=None),
+                 sort_by: str = Query("created_at"),
+                 assignee: str = Query(default=None)):
     print("logs------------------")
-    return crud.get_all_tickets()
+    return crud.get_all_tickets(status, sort_by, assignee)
 
 
 @router.get("/{ticket_id}", response_model=TicketResponse)
@@ -35,6 +37,7 @@ def read(ticket_id: str):
 @router.put("/{ticket_id}", response_model=TicketResponse)
 def update(ticket_id: str, data: TicketUpdate):
     ticket = crud.update_ticket(ticket_id, data)
+    print("update--------------------", ticket)
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
     return ticket
@@ -44,5 +47,5 @@ def update(ticket_id: str, data: TicketUpdate):
 def delete(ticket_id: str):
     result = crud.delete_ticket(ticket_id)
     if not result:
-        raise HTTPException(status_code=404, detail="Ticket not found")
+        raise HTTPException(result)
     return {"message": "Ticket deleted"}
