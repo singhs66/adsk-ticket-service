@@ -28,7 +28,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=409, detail="User already exists")
     new_user = User(
         name=user.name,
-        email=user.email,
+        email=str(user.email),
         password=hash_password(user.password),
         active=True
     )

@@ -16,6 +16,7 @@ def create_ticket(data: TicketCreate):
         title=data.title,
         description=data.description,
         severity=data.severity or "medium",
+        status=data.status or "Open",
         assignee=assign_tickets_randomly(),
         created_at=datetime.datetime.now(),
         category=data.category)

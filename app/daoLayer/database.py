@@ -22,7 +22,7 @@ def buildLocalDB():
     return {localTicket.id: localTicket}
 
 
-DATABASE_URL = "postgresql://postgres:nikhiltest@database-1.cqdw0cis8jds.us-east-1.rds.amazonaws.com:5432/postgres"
+DATABASE_URL = ""
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -101,7 +101,7 @@ def get_ticket_dao(ticket_id: str):
     #     return cached
     try:
         # Query ticket_id record from the tickets table
-        getTicketSO = db.query(Ticket).get(ticket_id)
+        getTicketSO = db.query(Ticket).filter(Ticket.id == ticket_id).first()
 
         # Add this to cache
         # set_to_cache(ticket_id, getTicketSO)
@@ -126,6 +126,8 @@ def update_ticket_dao(ticket_id: str, updatedTicket: TicketUpdate):
         print("Successfully Updated --> ", db_ticket)
         db.commit()
         db.refresh(db_ticket)
+
+        print("After commit →", db_ticket.status, db_ticket.description)
 
         send_slack_notification_create(db_ticket, action="Updated")
 
