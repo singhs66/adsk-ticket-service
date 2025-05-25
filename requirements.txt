@@ -5,9 +5,12 @@ boto3
 sqlalchemy
 psycopg2-binary
 python-dotenv
-psycopg2-binary
 python-jose[cryptography]
 passlib[bcrypt]
-python-dotenv
 python-multipart
 pydantic[email]
+fastapi[all]
+redis
+requests
+httpx
+asyncio

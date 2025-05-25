@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr
@@ -11,18 +12,19 @@ class TicketCreate(BaseModel):
     title: str
     description: str
     severity: Optional[str] = "medium"
+    category: Optional[str] = "other"
 
 
 class TicketUpdate(BaseModel):
-    title: Optional[str]
     description: Optional[str]
     status: Optional[str]
-    severity: Optional[str]
-
 
 class TicketResponse(TicketCreate):
     id: UUID
     status: str
+    category: Optional[str]
+    created_at: datetime
+    assignee: Optional[str]
 
 
 # <--------------------------------------------------------->

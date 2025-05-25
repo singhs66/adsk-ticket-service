@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, String, Text, DateTime, func, UUID, Integer
+from sqlalchemy import Column, String, Text, DateTime, func, UUID, Integer, Index
 from app.daoLayer.database_base import Base
 
 
@@ -15,3 +15,12 @@ class Ticket(Base):
     severity = Column(String(50), nullable=False)
     status = Column(String(50), default='open')
     comments = Column(String(255), nullable=True)
+    category = Column(String(50))
+    assignee = Column(String(255))
+
+    __table_args__ = (
+        Index("idx_tickets_status", "status"),
+        Index("idx_tickets_created_at", "created_at"),
+        Index("idx_tickets_id", "id"),
+        Index("idx_tickets_assignee", "assignee"),
+    )

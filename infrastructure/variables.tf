@@ -1,6 +1,6 @@
 variable "aws_region" {
   description = "AWS region to deploy resources in."
-  default     = "us-east-1"
+  default     = "us-west-2"
 }
 
 variable "db_username" {
@@ -10,13 +10,22 @@ variable "db_username" {
 }
 
 variable "db_password" {
-  description = "Database master password."
+  description = "Database master password. (stored in Secrets Manager)"
   type        = string
   sensitive   = true
-  default     = "nikhilticket"
 }
 
 variable "db_name" {
   description = "Database name."
   default     = "ticket-service"
+}
+
+variable "alb_domain_name" {
+  description = "The domain name for the ALB ACM certificate."
+  type        = string
+}
+
+variable "route53_zone_id" {
+  description = "The Route53 Hosted Zone ID for ACM DNS validation."
+  type        = string
 }
