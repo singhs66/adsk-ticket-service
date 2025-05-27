@@ -7,7 +7,7 @@
 - **Future Vision:**  
   The long-term plan is to migrate all compute and data resources (ECS, RDS, ElastiCache) into private subnets for enhanced security. Only the Application Load Balancer (ALB) will remain in the public subnet to handle external traffic and securely route requests to internal resources.
 
-**Q: How did decide your key and value for your redis cache ?**
+**Q: How did you decide your key and value for your redis cache ?**
 
 For individual tickets, the cache key is set as `ticket:{id}`, where `{id}` is the unique ticket identifier. This ensures fast and direct access to a specific ticket.
 
