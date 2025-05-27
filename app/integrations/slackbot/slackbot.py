@@ -1,8 +1,19 @@
 import requests
+import os
+import boto3
 
 from app.daoLayer.serviceObjects import TicketSO
 
-SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/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"
+# Retrieve Slack webhook URL from SSM Parameter Store if not set in env
+SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
+if not SLACK_WEBHOOK_URL:
+    ssm = boto3.client("ssm", region_name=os.getenv("AWS_REGION", "us-west-2"))
+    param = ssm.get_parameter(Name="/fastapi/production/slack_webhook_url", WithDecryption=True)
+    SLACK_WEBHOOK_URL = param["Parameter"]["Value"]
+
+
+print(f"Using Slack webhook URL: {SLACK_WEBHOOK_URL}")
+
 def send_slack_notification_create(ticketSO: TicketSO, action: str):
     if action == "Created":
         message = {
