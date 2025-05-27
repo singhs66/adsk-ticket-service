@@ -1,0 +1,107 @@
+@startuml
+' FastAPI Ticket App Sequence Diagram
+
+actor User
+participant "FastAPI API" as API
+participant "CRUD Layer" as CRUD
+participant "DAO Layer" as DAO
+participant "Redis Cache" as Redis
+participant "PostgreSQL DB" as DB
+
+== Auth: Login (POST /token) ==
+User -> API: POST /token (username, password)
+API -> DAO: authenticate_user(db, username, password)
+DAO -> DB: SELECT * FROM users WHERE username=?
+DB --> DAO: user row
+DAO --> API: user object or None
+alt Auth Success
+    API -> DAO: create_access_token(user.id)
+    API --> User: access_token
+else Auth Fail
+    API --> User: 400 Invalid credentials
+end
+
+== Auth: Register (POST /register) ==
+User -> API: POST /register (user info)
+API -> DAO: db.query(User).filter(User.email==user.email)
+DAO -> DB: SELECT * FROM users WHERE email=?
+DB --> DAO: user row or None
+alt User Exists
+    API --> User: 409 User already exists
+else New User
+    API -> DAO: db.add(new_user), db.commit()
+    DAO -> DB: INSERT INTO users ...
+    DB --> DAO: success
+    DAO --> API: new user
+    API --> User: User created
+end
+
+== Ticket List (GET /tickets) ==
+User -> API: GET /tickets
+API -> Redis: get(cache_key)
+alt Cache Hit
+    Redis --> API: cached tickets
+    API --> User: ticket list (from cache)
+else Cache Miss
+    API -> CRUD: list_ticket_dao()
+    CRUD -> DAO: Query tickets
+    DAO -> DB: SELECT * FROM tickets
+    DB --> DAO: ticket rows
+    DAO --> CRUD: ticket objects
+    CRUD --> API: ticket list
+    API -> Redis: set(cache_key, ticket list)
+    API --> User: ticket list (from DB)
+end
+
+== Ticket Detail (GET /tickets/{id}) ==
+User -> API: GET /tickets/{id}
+API -> Redis: get(ticket:{id})
+alt Cache Hit
+    Redis --> API: cached ticket
+    API --> User: ticket detail (from cache)
+else Cache Miss
+    API -> CRUD: get_ticket_dao(id)
+    CRUD -> DAO: Query ticket by id
+    DAO -> DB: SELECT * FROM tickets WHERE id=?
+    DB --> DAO: ticket row
+    DAO --> CRUD: ticket object
+    CRUD --> API: ticket detail
+    API -> Redis: set(ticket:{id}, ticket detail)
+    API --> User: ticket detail (from DB)
+end
+
+== Create Ticket (POST /tickets) ==
+User -> API: POST /tickets
+API -> CRUD: create_ticket_dao(ticket)
+CRUD -> DAO: Insert ticket
+DAO -> DB: INSERT INTO tickets ...
+DB --> DAO: success
+DAO --> CRUD: ticket object
+CRUD --> API: created ticket
+API --> User: created ticket
+
+== Update Ticket (PUT /tickets/{id}) ==
+User -> API: PUT /tickets/{id}
+API -> CRUD: update_ticket_dao(id, data)
+CRUD -> DAO: Update ticket
+DAO -> DB: UPDATE tickets SET ... WHERE id=?
+DB --> DAO: success
+DAO --> CRUD: updated ticket
+CRUD -> Redis: delete(ticket:{id})
+CRUD -> Redis: delete(tickets:all:None:created_at:None)
+CRUD --> API: updated ticket
+API --> User: updated ticket
+
+== Delete Ticket (DELETE /tickets/{id}) ==
+User -> API: DELETE /tickets/{id}
+API -> CRUD: delete_ticket_dao(id)
+CRUD -> DAO: Delete ticket
+DAO -> DB: DELETE FROM tickets WHERE id=?
+DB --> DAO: success
+DAO --> CRUD: result
+CRUD -> Redis: delete(ticket:{id})
+CRUD -> Redis: delete(tickets:all:None:created_at:None)
+CRUD --> API: result
+API --> User: result
+
+@enduml
