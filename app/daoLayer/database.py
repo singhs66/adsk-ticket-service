@@ -1,6 +1,8 @@
 from http.client import HTTPException
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+import boto3
+import os
 
 from app import apiSchemas
 from app.apiSchemas import TicketUpdate
@@ -11,19 +13,24 @@ from app.daoLayer.serviceObjects import TicketSO
 from sqlalchemy import text
 from app.integrations.slackbot.slackbot import send_slack_notification_create
 
-def buildLocalDB():
-    localTicket = apiSchemas.TicketResponse
-    localTicket.id = "1"
-    localTicket.status = "progress"
-    localTicket.title = "some"
-    localTicket.description = "description"
-    localTicket.severity = "high"
 
-    return {localTicket.id: localTicket}
+# Get DB password: use env var in AWS, fetch from SSM for local/dev
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+if not DB_PASSWORD:
+    # Only fetch from SSM if NOT running in ECS
+    if not os.getenv("ECS_CONTAINER_METADATA_URI") and not os.getenv("AWS_EXECUTION_ENV"):
+        DB_PASSWORD_PARAM = os.getenv("DB_PASSWORD_PARAM_NAME", "/fastapi/production/db_password")
+        AWS_REGION = os.getenv("AWS_REGION", "us-west-2")
+        import boto3
+        def get_db_password_from_ssm(param_name: str, region: str = "us-west-2"):
+            ssm = boto3.client("ssm", region_name=region)
+            response = ssm.get_parameter(Name=param_name, WithDecryption=True)
+            return response["Parameter"]["Value"]
+        DB_PASSWORD = get_db_password_from_ssm(DB_PASSWORD_PARAM, region=AWS_REGION)
+    else:
+        raise RuntimeError("DB_PASSWORD environment variable is not set in ECS. Check your ECS secrets configuration.")
 
-
-DATABASE_URL = ""
-
+DATABASE_URL = f"postgresql://postgres:{DB_PASSWORD}@database-1.cqdw0cis8jds.us-east-1.rds.amazonaws.com:5432/postgres"
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -40,10 +47,6 @@ def get_db():
         yield db
     finally:
         db.close()
-
-
-def tickets_db():
-    return buildLocalDB()
 
 
 def create_ticket_dao(ticketSO: TicketSO):

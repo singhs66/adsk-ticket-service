@@ -1,12 +1,14 @@
 import datetime
 import random
-from typing import List
+import json
+import uuid
 from uuid import uuid4
 
 from app.apiSchemas import TicketCreate
 from app.daoLayer.serviceObjects.TicketSO import TicketSO
 from app.daoLayer.database import create_ticket_dao, list_ticket_dao, get_ticket_dao, \
     delete_ticket_dao, update_ticket_dao
+from app.cacheRedis import RedisCache
 
 
 def create_ticket(data: TicketCreate):
@@ -29,26 +31,90 @@ def create_ticket(data: TicketCreate):
     return ticketSO
 
 
+def serialize_ticket(t):
+    """
+    Serializes a ticket object to a dictionary for caching.
+    Tries model_dump (Pydantic v2), then dict (Pydantic v1), then __dict__, then str as fallback.
+    Removes SQLAlchemy InstanceState if present.
+    Converts UUID and datetime fields to strings for JSON serialization.
+    """
+    def convert(obj):
+        if isinstance(obj, dict):
+            return {k: convert(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [convert(i) for i in obj]
+        elif isinstance(obj, uuid.UUID):
+            return str(obj)
+        elif isinstance(obj, datetime.datetime):
+            return obj.isoformat()
+        else:
+            return obj
+    if hasattr(t, 'model_dump'):
+        d = t.model_dump()
+    elif hasattr(t, 'dict'):
+        d = t.dict()
+    elif hasattr(t, '__dict__'):
+        d = dict(t.__dict__)
+        d.pop('_sa_instance_state', None)
+    else:
+        d = str(t)
+    return convert(d)
+
+
 def get_all_tickets(status: str ,
                     sort_by: str,
                     assignee: str):
-    return list_ticket_dao(status, sort_by, assignee)
+    cache_key = f"tickets:all:{status}:{sort_by}:{assignee}"
+    print(f"[RedisCache] Checking cache for key: {cache_key}")
+    cached = RedisCache.get(cache_key)
+    if cached:
+        print(f"[RedisCache] Cache hit for key: {cache_key}")
+        return json.loads(cached)
+    print(f"[RedisCache] Cache miss for key: {cache_key}. Fetching from DB and setting cache.")
+    result = list_ticket_dao(status, sort_by, assignee)
+    RedisCache.set(cache_key, json.dumps([serialize_ticket(t) for t in result]))
+    print(f"[RedisCache] Cache set for key: {cache_key}")
+    return result
 
 
 def get_ticket(ticket_id):
-    return get_ticket_dao(ticket_id)
+    cache_key = f"ticket:{ticket_id}"
+    print(f"[RedisCache] Checking cache for key: {cache_key}")
+    cached = RedisCache.get(cache_key)
+    if cached:
+        print(f"[RedisCache] Cache hit for key: {cache_key}")
+        return json.loads(cached)
+    print(f"[RedisCache] Cache miss for key: {cache_key}. Fetching from DB and setting cache.")
+    result = get_ticket_dao(ticket_id)
+    if result:
+        data = serialize_ticket(result)
+        RedisCache.set(cache_key, json.dumps(data))
+        print(f"[RedisCache] Cache set for key: {cache_key}")
+    return result
 
 
 def update_ticket(ticket_id, data):
-    # getTicketSO = get_ticket_dao(ticket_id)
-    # if not getTicketSO:
-    #     return None
-    # updatedTicketSO = getTicketSO.copy(update=data.dict(exclude_unset=True))
-    return update_ticket_dao(ticket_id,data)
+    result = update_ticket_dao(ticket_id, data)
+    # Invalidate cache for this ticket and ticket list
+    print(f"[RedisCache] Invalidating cache for ticket:{ticket_id}")
+    RedisCache.get_client().delete(f"ticket:{ticket_id}")
+    # If your app allows filtering/sorting on the ticket list, it is better to invalidate all relevant caches (e.g., all keys matching tickets:all:*)
+    # This deletes only the cache for the default/unfiltered ticket list (status=None, sort_by=created_at, assignee=None)
+    print(f"[RedisCache] Invalidating cache for tickets:all:None:created_at:None")
+    RedisCache.get_client().delete("tickets:all:None:created_at:None")
+    return result
 
 
 def delete_ticket(ticket_id):
-    return delete_ticket_dao(ticket_id)
+    result = delete_ticket_dao(ticket_id)
+    # Invalidate cache for this ticket and ticket list
+    print(f"[RedisCache] Invalidating cache for ticket:{ticket_id}")
+    RedisCache.get_client().delete(f"ticket:{ticket_id}")
+    # If your app allows filtering/sorting on the ticket list, it is better to invalidate all relevant caches (e.g., all keys matching tickets:all:*)
+    # This deletes only the cache for the default/unfiltered ticket list (status=None, sort_by=created_at, assignee=None)
+    print(f"[RedisCache] Invalidating cache for tickets:all:None:created_at:None")
+    RedisCache.get_client().delete("tickets:all:None:created_at:None")
+    return result
 
 
 
