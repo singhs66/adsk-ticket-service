@@ -4,6 +4,69 @@ This guide explains how to set up, test, and verify Redis caching and cache inva
 
 ---
 
+## Redis Data Flow Diagrams
+
+Below are simple data flow diagrams illustrating how Redis caching is integrated into the ticketing system for both single ticket and ticket list queries.
+
+### 1. Single Ticket Fetch (Cache-Aside Pattern)
+
+```
+[Client] 
+   |
+   v
+[API Endpoint] 
+   |
+   v
+[Check Redis: ticket:{id}]
+   |         \
+   | (Hit)    \ (Miss)
+   v           v
+[Return]   [Query DB]
+   |           |
+   |           v
+   |     [Store in Redis: ticket:{id}]
+   |           |
+   +-----------+
+   |
+[Return to Client]
+```
+
+---
+
+### 2. Ticket List Fetch (with Filters)
+
+```
+[Client]
+   |
+   v
+[API Endpoint]
+   |
+   v
+[Check Redis: tickets:all:{status}:{sort_by}:{assignee}]
+   |         \
+   | (Hit)    \ (Miss)
+   v           v
+[Return]   [Query DB with filters]
+   |           |
+   |           v
+   |     [Store in Redis: tickets:all:{status}:{sort_by}:{assignee}]
+   |           |
+   +-----------+
+   |
+[Return to Client]
+```
+
+---
+
+**Note:**  
+- On ticket creation, update, or delete, the relevant Redis keys are invalidated or updated to keep cache and database in sync.
+- This cache-aside pattern ensures the system always serves fresh data and improves performance for frequent queries.
+
+
+---
+
+---
+
 ## 1. Ensure Redis is Running (Local)
 
 If you haven’t already, start Redis:
