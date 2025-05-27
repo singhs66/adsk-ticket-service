@@ -35,3 +35,9 @@ variable "db_password_param_name" {
   type        = string
   default     = "/fastapi/production/db_password"
 }
+
+variable "slack_webhook_url" {
+  description = "Slack webhook URL for notifications. (stored in SSM Parameter Store)"
+  type        = string
+  sensitive   = true
+}

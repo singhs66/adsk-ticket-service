@@ -46,6 +46,10 @@ resource "aws_ecs_task_definition" "fastapi" {
         {
           name      = "DB_PASSWORD"
           valueFrom = aws_ssm_parameter.db_password.arn
+        },
+        {
+          name      = "SLACK_WEBHOOK_URL"
+          valueFrom = aws_ssm_parameter.slack_webhook_url.arn
         }
       ]
     }

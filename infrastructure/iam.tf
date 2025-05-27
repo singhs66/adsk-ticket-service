@@ -15,31 +15,6 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# Commented out: Allow ECS task execution role to get secret value from Secrets Manager
-# resource "aws_iam_policy" "ecs_secretsmanager_policy" {
-#   name        = "ecsSecretsManagerPolicy2" # Changed name to avoid conflict
-#   description = "Allow ECS tasks to get secret value from Secrets Manager"
-#   policy      = jsonencode({
-#     Version = "2012-10-17",
-#     Statement = [
-#       {
-#         Effect = "Allow",
-#         Action = [
-#           "secretsmanager:GetSecretValue"
-#         ],
-#         Resource = [
-#           aws_secretsmanager_secret.fastapi_db_password.arn
-#         ]
-#       }
-#     ]
-#   })
-# }
-#
-# resource "aws_iam_role_policy_attachment" "ecs_secretsmanager_policy_attachment" {
-#   role       = aws_iam_role.ecs_task_execution.name
-#   policy_arn = aws_iam_policy.ecs_secretsmanager_policy.arn
-# }
-
 resource "aws_iam_policy" "ecs_ssm_policy" {
   name        = "ecsSSMParameterPolicy"
   description = "Allow ECS tasks to get parameter from SSM"
@@ -52,7 +27,8 @@ resource "aws_iam_policy" "ecs_ssm_policy" {
           "ssm:GetParameters"
         ],
         Resource = [
-          aws_ssm_parameter.db_password.arn
+          aws_ssm_parameter.db_password.arn,
+          aws_ssm_parameter.slack_webhook_url.arn
         ]
       }
     ]
