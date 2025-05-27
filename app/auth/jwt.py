@@ -21,7 +21,6 @@ def decode_access_token(token: str):
 
 def verify_token(token: str = Depends(oauth2_scheme)):
     try:
-        print("JWT Token:", token)
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload  # optionally extract user_id/email from payload
     except JWTError:

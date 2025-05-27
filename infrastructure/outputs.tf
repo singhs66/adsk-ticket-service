@@ -21,3 +21,13 @@ output "db_port" {
 output "db_name" {
   value = aws_db_instance.postgres.db_name
 }
+
+output "redis_endpoint" {
+  description = "Primary endpoint of the ElastiCache Redis cluster"
+  value       = aws_elasticache_cluster.redis.cache_nodes[0].address
+}
+
+output "redis_port" {
+  description = "Port for Redis"
+  value       = aws_elasticache_cluster.redis.cache_nodes[0].port
+}

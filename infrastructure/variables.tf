@@ -29,3 +29,9 @@ variable "route53_zone_id" {
   description = "The Route53 Hosted Zone ID for ACM DNS validation."
   type        = string
 }
+
+variable "db_password_param_name" {
+  description = "Name of the SSM parameter for the database password."
+  type        = string
+  default     = "/fastapi/production/db_password"
+}

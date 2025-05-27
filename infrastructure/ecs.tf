@@ -20,7 +20,20 @@ resource "aws_ecs_task_definition" "fastapi" {
       image     = aws_ecr_repository.fastapi.repository_url
       essential = true
       portMappings = [{ containerPort = 8000, hostPort = 8000 }]
-      environment = []
+      environment = [
+        {
+          name  = "DB_PASSWORD_PARAM_NAME"
+          value = var.db_password_param_name
+        },
+        {
+          name  = "AWS_REGION"
+          value = var.aws_region
+        },
+        {
+          name  = "REDIS_URL"
+          value = "redis://${aws_elasticache_cluster.redis.cache_nodes[0].address}:6379/0"
+        }
+      ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {

@@ -18,6 +18,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     if not user:
         raise HTTPException(status_code=400, detail="Invalid credentials")
     token = create_access_token({"sub": str(user.id)})
+    print("Access token created successfully")
     return {"access_token": token, "token_type": "bearer"}
 
 
@@ -34,4 +35,5 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     )
     db.add(new_user)
     db.commit()
+    print("User created successfully")
     return {"message": "User created"}
