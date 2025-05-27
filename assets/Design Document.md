@@ -100,7 +100,7 @@ The ticketing system is designed as a cloud-native, microservices-based applicat
 
 This approach ensures the system is robust, scalable, and maintainable, with clear separation of concerns and best practices for cloud-native application development.
 
-
+![architecturediagram.png](architecturediagram.png)
 
 
 ## System Design  
@@ -190,8 +190,7 @@ PostgreSQL also enables rich queries, joins, indexing, and enforcement of busine
 ![img_6.png](img_6.png)
 
   
-### Security 
-
+### Security
 
 * Enforced JWT-based authentication for all API routes using FastAPI dependency injection
 
@@ -200,6 +199,8 @@ PostgreSQL also enables rich queries, joins, indexing, and enforcement of busine
 * HTTPS is enforced via AWS ACM + ALB, ensuring encrypted communication in transit
 
 * Database is encrypted at rest using AWS RDS + KMS, protecting sensitive ticket and user data
+
+* Here is how HTTPS request is handled -> [docs/secureconnetcions.md](../docs/secureconnetcions.md)
 
 The ticketing system prevents SQL injection attacks through the following measures:
 

@@ -1,5 +1,27 @@
 # FAQ
 
+**Why did we choose JWT over OAuth2?**
+
+We use JWT (JSON Web Tokens) as the token format for authentication because it is lightweight, stateless, and easy to implement for API authentication in microservices. 
+While OAuth2 is an authorization framework that can use JWT as a token format, full OAuth2 implementations are more complex and often require additional infrastructure (like an authorization server) and are best suited for scenarios involving third-party access delegation.
+
+For this project:
+- We only need simple, secure user authentication and route protection, not third-party authorization.
+- JWT allows us to encode user identity and claims directly in the token, which can be validated without a database lookup.
+- FastAPI provides built-in support for JWT-based authentication, making integration straightforward.
+
+**Why did you choose ECS Fargate and ALB over other options like EC2 or API Gateway?**
+
+Fargate abstracts away server management while still giving me control over container networking and IAM. 
+It’s ideal for managing isolated microservices like a ticketing API. I chose ALB because I needed path-based routing, SSL termination (via ACM), and session stickiness — which API Gateway didn’t provide as easily without additional Lambda proxies.
+
+**How would you handle high write volume or concurrent updates to a ticket?**
+
+For concurrency, PostgreSQL handles ACID compliance and row-level locking. In the app, each update uses a consistent DB session and commits are followed by db.refresh() to get the latest state. 
+If this scaled further, I’d consider optimistic locking using a version field or timestamp, and implement conflict resolution for concurrent writes.
+
+In summary, JWT is used for its simplicity and efficiency, while OAuth2 is more suitable for advanced authorization scenarios.
+
 **Q: Are you running the service in public or private subnet  ?**
 - **Current Architecture:**  
   For the scope of this project, all AWS resources (ECS tasks, RDS, ElastiCache, etc.) are deployed in a public subnet to simplify access and testing.
