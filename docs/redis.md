@@ -65,8 +65,6 @@ Below are simple data flow diagrams illustrating how Redis caching is integrated
 
 ---
 
----
-
 ## 1. Ensure Redis is Running (Local)
 
 If you haven’t already, start Redis:
