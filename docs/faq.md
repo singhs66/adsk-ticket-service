@@ -16,6 +16,7 @@ For ticket list queries, the cache key is constructed as `tickets:all:{status}:{
 In both cases, the value stored is the serialized ticket object or list (typically as JSON). This approach supports quick lookups, easy cache invalidation when tickets change, and aligns with best practices for caching both single objects and query results.
 
 **Q: How did you prevent SQL injections ?**
+
 The ticketing system prevents SQL injection attacks through the following measures:
 
 - **ORM Usage:**  
