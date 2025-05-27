@@ -2,7 +2,7 @@ import requests
 
 from app.daoLayer.serviceObjects import TicketSO
 
-SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/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"
+SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/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"
 def send_slack_notification_create(ticketSO: TicketSO, action: str):
     if action == "Created":
         message = {
